@@ -6,66 +6,126 @@ const Student = require('../model/Students');
 
 class StudentController {
   async index(req, res) {
-    const student = await Student.all();
-    const data = {
-      message: 'menampilkan seluruh data ',
-      data: student,
-    };
-    res.json(data);
+    const student = await Student.findAndCountAll();
+
+    if (student.count > 0) {
+      const data = {
+        message: 'menampilkan seluruh data ',
+        data: student,
+      };
+      res.status(200).json(data);
+    } else {
+      const data = {
+        message: 'Student not Found / tidak ada data ',
+      };
+      res.status(404).json(data);
+    }
   }
 
+  //* menambahkan data
   async store(req, res) {
-    const nama = req.body.nama;
-    const nim = req.body.nim;
-    const email = req.body.email;
-    const jurusan = req.body.jurusan;
-    const student = await Student.create(nama, nim, email, jurusan);
-    // const studentall = await Student.all();
-    // const student = Student.push(nama);
+    const { nama, nim, email, jurusan } = req.body;
 
-    const data = {
-      message: `Menambah data Student dengan Nama : ${nama}`,
-      // jumlah: student,
-      // data: student,
-      data: student,
-    };
-    res.json(data);
+    if (!nama || !nim || !email || !jurusan) {
+      //* respon jika salah satu data tidak dikirim
+      const data = {
+        message: 'semua data harus dikirim',
+      };
+      res.status(422).json(data);
+    } else {
+      const student = await Student.create(req.body);
+
+      const data = {
+        message: `Menambah data Student`,
+        // jumlah: student,
+        // data: student,
+        data: student,
+      };
+      res.status(201).json(data);
+    }
   }
+
+  //* mengupdate data
   async update(req, res) {
-    const id = req.params.id;
-    const newnama = req.body.nama;
-    const newnim = req.body.nim;
-    const newemail = req.body.email;
-    const newjurusan = req.body.jurusan;
-    const student = await Student.update(id, newnama, newnim, newemail, newjurusan);
+    const student = await Student.findOne({
+      where: {
+        id: req.params.id,
+      },
+    });
 
-    // const student = Student.push(nama);
-    const data = {
-      message: `Mengupdate data Student`,
-      ubah: student,
-      data: Student,
-    };
-    res.json(data);
+    if (student) {
+      const id = req.params.id;
+      const { nama, nim, email, jurusan } = req.body;
+      const studen = await Student.update(req.body, {
+        where: {
+          id: req.params.id,
+        },
+      });
+      const data = {
+        message: `Mengupdate data Student`,
+        jumlah: studen,
+        data: {
+          id: id,
+          nama: nama,
+          nim: nim,
+          email: email,
+          jurusan: jurusan,
+        },
+      };
+      res.status(200).json(data);
+    } else {
+      const data = {
+        message: 'Student not found',
+      };
+      res.status(404).json(data);
+    }
   }
+
+  //* menghapus data
   async destroy(req, res) {
     const id = req.params.id;
-    const student = await Student.delete(id);
-    const data = {
-      message: `Berhasil Menghapus data`,
-      hapus: student,
-      // data: Student,
-    };
-    res.json(data);
+    const student = await Student.destroy({
+      where: {
+        id: req.params.id,
+      },
+      force: true,
+    });
+    if (student) {
+      const data = {
+        message: `Berhasil Menghapus data dengan id : ${id}`,
+      };
+      res.status(200).json(data);
+    } else {
+      const data = {
+        message: `Student not Found`,
+      };
+
+      res.status(404).json(data);
+    }
   }
+
+  //* melihat data sesuai id
   async show(req, res) {
     const id = req.params.id;
-    const student = await Student.find(id);
-    const data = {
-      message: `Berhasil Menghapus data`,
-      data: student,
-      // data: Student,
-    };
-    res.json(data);
+    const student = await Student.findOne({
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    if (student) {
+      const data = {
+        message: `data dengan id ${id}`,
+        data: student,
+        // data: Student,
+      };
+      res.status(200).json(data);
+    } else {
+      const data = {
+        message: `Student not Found`,
+      };
+      res.status(404).json(data);
+    }
   }
 }
 
